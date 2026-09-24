@@ -1,0 +1,1 @@
+Build a diagnostic bundle for my printer. Collect the current printer status, the last 500 daemon log lines, the installed PronsoleD version, and the relevant configuration files in parallel. Package those results into a tar archive, calculate its checksum, and write a small manifest describing every artifact in the bundle.

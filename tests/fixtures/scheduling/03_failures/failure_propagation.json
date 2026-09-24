@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"find-stl","service":"filesystem-search","operation":"find-newest","arguments":{"simulate":{"outcome":"success"}},"depends_on":[]},
+    {"id":"verify-stl","service":"filesystem","operation":"sha256","arguments":{"simulate":{"outcome":"fail","failure_class":"permanent"}},"depends_on":["find-stl"]},
+    {"id":"upload","service":"pronsole","operation":"stage","arguments":{},"depends_on":["verify-stl"]},
+    {"id":"start-print","service":"pronsole","operation":"print","arguments":{},"depends_on":["upload"]}
+  ]
+}

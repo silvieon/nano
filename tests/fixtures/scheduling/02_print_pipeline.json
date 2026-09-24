@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"find-stl","service":"filesystem-search","operation":"find-newest","arguments":{"share":"files","name":"benchy-final.stl"},"depends_on":[]},
+    {"id":"verify-stl","service":"filesystem","operation":"sha256","arguments":{},"depends_on":["find-stl"]},
+    {"id":"check-daemon","service":"service-registry","operation":"health","arguments":{"service":"pronsole"},"depends_on":[]},
+    {"id":"check-printer","service":"pronsole","operation":"status","arguments":{},"depends_on":[]},
+    {"id":"stage-file","service":"pronsole","operation":"stage","arguments":{},"depends_on":["verify-stl","check-daemon","check-printer"]},
+    {"id":"start-print","service":"pronsole","operation":"print","arguments":{},"depends_on":["stage-file"]},
+    {"id":"monitor-print","service":"pronsole","operation":"monitor","arguments":{},"depends_on":["start-print"]}
+  ]
+}

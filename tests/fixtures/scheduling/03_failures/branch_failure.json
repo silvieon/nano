@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"status","service":"pronsole","operation":"status","arguments":{"simulate":{"outcome":"success"}},"depends_on":[]},
+    {"id":"config","service":"pronsole","operation":"config","arguments":{"simulate":{"outcome":"success"}},"depends_on":[]},
+    {"id":"logs","service":"filesystem","operation":"recent-logs","arguments":{"simulate":{"outcome":"fail","failure_class":"permanent"}},"depends_on":[]},
+    {"id":"report","service":"artifact-store","operation":"write","arguments":{"failure_policy":"partial_results"},"depends_on":["status","config","logs"]}
+  ]
+}

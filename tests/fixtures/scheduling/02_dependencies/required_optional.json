@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"status","service":"pronsole","operation":"status","arguments":{"dependency_class":"required"},"depends_on":[]},
+    {"id":"config","service":"pronsole","operation":"config","arguments":{"dependency_class":"required"},"depends_on":[]},
+    {"id":"logs","service":"filesystem","operation":"recent-logs","arguments":{"dependency_class":"optional"},"depends_on":[]},
+    {"id":"temperature","service":"pronsole","operation":"temperature-history","arguments":{"dependency_class":"optional"},"depends_on":[]},
+    {"id":"report","service":"artifact-store","operation":"write","arguments":{"dependency_policy":"required_status_and_config_optional_rest"},"depends_on":["status","config","logs","temperature"]}
+  ]
+}

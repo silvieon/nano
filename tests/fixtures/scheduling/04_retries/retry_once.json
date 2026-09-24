@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "nodes": [
+    {
+      "id": "status",
+      "service": "pronsole",
+      "operation": "status",
+      "arguments": {
+        "simulate": {
+          "outcomes": [
+            "transient_failure",
+            "success"
+          ]
+        }
+      },
+      "depends_on": [],
+      "retry_limit": 1
+    },
+    {
+      "id": "save",
+      "service": "artifact-store",
+      "operation": "write",
+      "arguments": {},
+      "depends_on": ["status"]
+    }
+  ]
+}

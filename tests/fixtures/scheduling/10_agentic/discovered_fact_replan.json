@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"find-stl","service":"filesystem-search","operation":"find-newest","arguments":{},"depends_on":[]},
+    {"id":"printer-capabilities","service":"pronsole","operation":"capabilities","arguments":{},"depends_on":[]},
+    {"id":"prepare-stl","service":"orchestrator","operation":"conditional","arguments":{"condition":"printer_capabilities.supports_stl"},"depends_on":["find-stl","printer-capabilities"]},
+    {"id":"stage","service":"pronsole","operation":"stage","arguments":{},"depends_on":["prepare-stl"]}
+  ]
+}

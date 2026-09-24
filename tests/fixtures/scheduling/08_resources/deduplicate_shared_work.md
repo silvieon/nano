@@ -1,0 +1,1 @@
+Produce both a printer health report and a print-readiness report. Both require current status, installed PronsoleD version, and printer configuration. Collect each shared input once and let both reports consume it.

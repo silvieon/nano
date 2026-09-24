@@ -1,0 +1,1 @@
+Search five independent sources for printer information. At most two searches may execute concurrently against the same search service. One search fails transiently and succeeds on retry; another fails permanently. Continue independent work and reconcile successful results.

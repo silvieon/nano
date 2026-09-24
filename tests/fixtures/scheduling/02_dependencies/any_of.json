@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"primary","service":"pronsole-primary","operation":"status","arguments":{"dependency_group":"printer-status","selection":"any_of"},"depends_on":[]},
+    {"id":"secondary","service":"pronsole-secondary","operation":"status","arguments":{"dependency_group":"printer-status","selection":"any_of"},"depends_on":[]},
+    {"id":"report","service":"artifact-store","operation":"write","arguments":{"dependency_group":"printer-status","selection":"any_of"},"depends_on":["primary","secondary"]}
+  ]
+}

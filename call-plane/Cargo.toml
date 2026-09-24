@@ -1,0 +1,10 @@
+[package]
+name = "nano-call-plane"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync"] }
+tonic = "0.12"
+prost = "0.13"
+tracing = "0.1"

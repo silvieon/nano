@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"printer-status","service":"pronsole","operation":"status","arguments":{},"depends_on":[]},
+    {"id":"daemon-health","service":"service-registry","operation":"health","arguments":{"service":"pronsole"},"depends_on":[]},
+    {"id":"filesystem-info","service":"filesystem","operation":"inventory","arguments":{"path":"/srv/printer"},"depends_on":[]},
+    {"id":"current-time","service":"system","operation":"time","arguments":{},"depends_on":[]},
+    {"id":"summary","service":"orchestrator","operation":"combine","arguments":{},"depends_on":["printer-status","daemon-health","filesystem-info","current-time"]}
+  ]
+}

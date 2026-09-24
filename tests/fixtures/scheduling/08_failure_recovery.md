@@ -1,0 +1,1 @@
+Try to retrieve the printer status from PronsoleD. If the daemon endpoint fails, retry the same operation twice with backoff. If it is still unavailable after the retries, query the service registry for another healthy PronsoleD instance and try there. Once a status is obtained, save it as a JSON artifact and report which instance supplied it.

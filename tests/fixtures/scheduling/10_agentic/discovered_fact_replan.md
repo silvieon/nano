@@ -1,0 +1,1 @@
+Find the newest STL and inspect printer capabilities. If the printer supports the STL format directly, stage it. Otherwise discover a compatible conversion tool, convert the STL, verify the converted artifact, and then stage it.

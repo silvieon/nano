@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"find-stl","service":"filesystem-search","operation":"find-newest","arguments":{"name":"benchy-final.stl"},"depends_on":[]},
+    {"id":"verify-stl","service":"filesystem","operation":"sha256","arguments":{},"depends_on":["find-stl"]},
+    {"id":"stage-stl","service":"pronsole","operation":"stage","arguments":{},"depends_on":["verify-stl"]}
+  ]
+}

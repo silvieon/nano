@@ -1,0 +1,105 @@
+# Design Agent Runtime — Non-Commercial Source-Available License
+
+Copyright (c) 2026 Silvia Wang
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to use,
+copy, modify, and distribute the Software, subject to the following terms.
+
+## 1. Permitted Use
+
+You may:
+
+- view and study the source code;
+- use the Software for personal, educational, research, and other
+  non-commercial purposes;
+- copy and redistribute the Software;
+- modify the Software and create derivative works;
+- share modified versions of the Software, provided that those versions
+  remain subject to this License.
+
+You may use the Software internally within a non-commercial organization
+provided that the use is not intended to generate revenue or provide a
+commercial service.
+
+## 2. Commercial Use
+
+Commercial use of the Software is not permitted without prior written
+permission from the copyright holder.
+
+"Commercial use" includes, but is not limited to:
+
+- selling the Software or a derivative work;
+- incorporating the Software or a substantial portion of it into a product
+  or service offered for sale;
+- using the Software to provide a paid service to third parties;
+- using the Software as part of a commercial SaaS, hosted, or managed service;
+- licensing the Software or a derivative work to another party for
+  commercial purposes;
+- using the Software primarily to generate revenue for a business or
+  organization.
+
+The copyright holder retains the exclusive right to commercially exploit,
+license, sell, sublicense, or otherwise monetize the Software and derivative
+works.
+
+A separate written commercial license may be obtained from the copyright
+holder.
+
+## 3. Attribution
+
+Redistributions of the Software or substantial portions of the Software must
+retain this copyright notice and a copy of this License.
+
+Modified versions must clearly indicate that modifications have been made.
+
+## 4. Source Availability
+
+If you distribute a modified version of the Software, you must make the
+corresponding modified source code available under this License when the
+modified version is distributed.
+
+You may not impose additional restrictions that prevent recipients from
+exercising the rights granted by this License for non-commercial purposes.
+
+## 5. No Trademark License
+
+This License does not grant permission to use any trademarks, service marks,
+logos, project names, or other branding associated with the Software or its
+copyright holder, except as reasonably necessary to describe the origin of
+the Software.
+
+## 6. No Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+## 7. Termination
+
+Any rights granted under this License automatically terminate if you violate
+the terms of this License.
+
+Upon termination, you must cease use and distribution of the Software, except
+to the extent otherwise permitted by applicable law.
+
+## 8. Reservation of Rights
+
+All rights not expressly granted by this License are reserved by the
+copyright holder.
+
+In particular, no commercial rights are granted by implication, estoppel,
+or otherwise.
+
+---
+
+Copyright (c) 2026 Silvia Wang
+
+This software is source-available for learning, research, personal use, and
+non-commercial experimentation. Commercial use requires a separate license
+from the copyright holder.

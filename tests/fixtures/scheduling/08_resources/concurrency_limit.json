@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"search-1","service":"web-search","operation":"search","arguments":{"query":"printer profile 1","concurrency_group":"web-search","simulate":{"outcome":"success"}},"depends_on":[]},
+    {"id":"search-2","service":"web-search","operation":"search","arguments":{"query":"printer profile 2","concurrency_group":"web-search","simulate":{"outcomes":["transient_failure","success"]}},"depends_on":[]},
+    {"id":"search-3","service":"web-search","operation":"search","arguments":{"query":"printer profile 3","concurrency_group":"web-search","simulate":{"outcome":"success"}},"depends_on":[]},
+    {"id":"search-4","service":"web-search","operation":"search","arguments":{"query":"printer profile 4","concurrency_group":"web-search","simulate":{"outcome":"permanent_failure"}},"depends_on":[]},
+    {"id":"search-5","service":"web-search","operation":"search","arguments":{"query":"printer profile 5","concurrency_group":"web-search","simulate":{"outcome":"success"}},"depends_on":[]},
+    {"id":"reconcile","service":"orchestrator","operation":"reconcile","arguments":{"failure_policy":"partial_results"},"depends_on":["search-1","search-2","search-3","search-4","search-5"]}
+  ]
+}

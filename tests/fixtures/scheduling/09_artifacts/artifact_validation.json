@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"generate","service":"artifact-store","operation":"write","arguments":{"format":"markdown"},"depends_on":[]},
+    {"id":"validate","service":"artifact-store","operation":"validate","arguments":{},"depends_on":["generate"]},
+    {"id":"publish","service":"artifact-store","operation":"publish","arguments":{},"depends_on":["validate"]}
+  ]
+}

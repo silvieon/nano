@@ -1,0 +1,1 @@
+Create a printer diagnostic report. Printer status and configuration are required. Recent logs and temperature history are optional. Continue if an optional input is unavailable, but do not produce the normal report if a required input fails.

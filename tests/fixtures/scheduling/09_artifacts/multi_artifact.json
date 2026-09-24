@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"find-stl","service":"filesystem-search","operation":"find-newest","arguments":{},"depends_on":[]},
+    {"id":"verify","service":"filesystem","operation":"sha256","arguments":{},"depends_on":["find-stl"]},
+    {"id":"metadata","service":"artifact-store","operation":"write","arguments":{"format":"json"},"depends_on":["find-stl","verify"]},
+    {"id":"report","service":"artifact-store","operation":"write","arguments":{"format":"markdown"},"depends_on":["find-stl","verify"]},
+    {"id":"package","service":"artifact-store","operation":"archive","arguments":{"format":"tar"},"depends_on":["metadata","report"]}
+  ]
+}

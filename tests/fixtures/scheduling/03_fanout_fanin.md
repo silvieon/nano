@@ -1,0 +1,1 @@
+Find the most recent photo backup directory. Once you know which directory it is, run three independent jobs against it: calculate a file inventory, calculate total storage usage, and generate a thumbnail contact sheet. After all three finish, combine their outputs into a single backup report and archive the report.

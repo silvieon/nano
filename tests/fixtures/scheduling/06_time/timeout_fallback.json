@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"primary","service":"pronsole-primary","operation":"status","arguments":{"simulate":{"outcome":"timeout"},"timeout_ms":5000},"depends_on":[]},
+    {"id":"secondary","service":"pronsole-secondary","operation":"status","arguments":{"simulate":{"outcome":"success"}},"depends_on":["primary"]},
+    {"id":"report","service":"artifact-store","operation":"write","arguments":{},"depends_on":["secondary"]}
+  ]
+}

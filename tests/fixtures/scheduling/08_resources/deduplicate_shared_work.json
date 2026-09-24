@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"status","service":"pronsole","operation":"status","arguments":{"shared_key":"printer-status"},"depends_on":[]},
+    {"id":"version","service":"pronsole","operation":"version","arguments":{"shared_key":"pronsole-version"},"depends_on":[]},
+    {"id":"config","service":"pronsole","operation":"config","arguments":{"shared_key":"printer-config"},"depends_on":[]},
+    {"id":"health-report","service":"artifact-store","operation":"write","arguments":{"report":"health"},"depends_on":["status","version","config"]},
+    {"id":"readiness-report","service":"artifact-store","operation":"write","arguments":{"report":"readiness"},"depends_on":["status","version","config"]}
+  ]
+}

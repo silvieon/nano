@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"filesystem-search","service":"filesystem-search","operation":"search","arguments":{"query":"Ender 3 printer configuration and recent logs"},"depends_on":[]},
+    {"id":"web-search","service":"web-search","operation":"search","arguments":{"query":"PronsoleD documentation"},"depends_on":[]},
+    {"id":"service-search","service":"service-registry","operation":"search","arguments":{"query":"printer daemon"},"depends_on":[]},
+    {"id":"reconcile","service":"orchestrator","operation":"reconcile","arguments":{},"depends_on":["filesystem-search","web-search","service-search"]},
+    {"id":"write-report","service":"artifact-store","operation":"write","arguments":{"format":"markdown","filename":"printer-setup.md"},"depends_on":["reconcile"]}
+  ]
+}

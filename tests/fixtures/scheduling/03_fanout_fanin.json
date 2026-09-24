@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"discover-backup","service":"filesystem-search","operation":"find-newest","arguments":{"query":"photo backup directory"},"depends_on":[]},
+    {"id":"inventory","service":"filesystem","operation":"inventory","arguments":{},"depends_on":["discover-backup"]},
+    {"id":"disk-usage","service":"filesystem","operation":"du","arguments":{},"depends_on":["discover-backup"]},
+    {"id":"contact-sheet","service":"media","operation":"thumbnails","arguments":{},"depends_on":["discover-backup"]},
+    {"id":"combine-report","service":"orchestrator","operation":"combine","arguments":{},"depends_on":["inventory","disk-usage","contact-sheet"]},
+    {"id":"archive-report","service":"artifact-store","operation":"archive","arguments":{},"depends_on":["combine-report"]}
+  ]
+}

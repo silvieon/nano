@@ -1,0 +1,1 @@
+Print the newest Benchy STL. If the printer rejects the selected profile as incompatible, stop the affected branch, inspect available profiles, choose a compatible profile, and re-plan the remaining print workflow. Do not blindly repeat the failed operation.

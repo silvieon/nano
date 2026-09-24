@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "nodes": [
+    {
+      "id": "search-web",
+      "service": "web-search",
+      "operation": "search",
+      "arguments": {"query": "Ender 3 printer status"},
+      "depends_on": []
+    },
+    {
+      "id": "search-files",
+      "service": "filesystem",
+      "operation": "search",
+      "arguments": {"query": "printer status"},
+      "depends_on": []
+    },
+    {
+      "id": "resolve",
+      "service": "orchestrator",
+      "operation": "resolve-search-results",
+      "arguments": {},
+      "depends_on": ["search-web", "search-files"]
+    },
+    {
+      "id": "report",
+      "service": "orchestrator",
+      "operation": "format-response",
+      "arguments": {},
+      "depends_on": ["resolve"]
+    }
+  ]
+}

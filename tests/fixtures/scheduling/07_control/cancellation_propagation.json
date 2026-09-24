@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"status","service":"pronsole","operation":"status","arguments":{},"depends_on":[]},
+    {"id":"monitor","service":"pronsole","operation":"monitor","arguments":{"long_running":true},"depends_on":["status"]},
+    {"id":"monitor-report","service":"artifact-store","operation":"write","arguments":{"derived_from":"monitor"},"depends_on":["monitor"]}
+  ]
+}

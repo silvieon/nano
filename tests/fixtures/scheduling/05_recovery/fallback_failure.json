@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"primary","service":"pronsole-primary","operation":"status","arguments":{"simulate":{"outcome":"permanent_failure"}},"depends_on":[]},
+    {"id":"discover-secondary","service":"service-registry","operation":"discover","arguments":{},"depends_on":["primary"]},
+    {"id":"secondary","service":"pronsole-secondary","operation":"status","arguments":{"simulate":{"outcome":"permanent_failure"}},"depends_on":["discover-secondary"]},
+    {"id":"failure-report","service":"artifact-store","operation":"write","arguments":{"report_type":"failure"},"depends_on":["primary","secondary"]}
+  ]
+}

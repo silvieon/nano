@@ -1,0 +1,39 @@
+syntax = "proto3";
+package nano.v1;
+
+import "nano/v1/common.proto";
+
+enum TaskState {
+  TASK_STATE_UNSPECIFIED = 0;
+  CREATED = 1;
+  READY = 2;
+  RUNNING = 3;
+  PAUSED = 4;
+  SUCCEEDED = 5;
+  FAILED = 6;
+  CANCELLED = 7;
+}
+
+message Task {
+  string task_id = 1;
+  string parent_task_id = 2;
+  string service = 3;
+  string operation = 4;
+  TaskState state = 5;
+  map<string,string> metadata = 6;
+}
+
+message TaskRequest {
+  string task_id = 1;
+  string service = 2;
+  string operation = 3;
+  bytes arguments = 4;
+}
+
+message TaskResult {
+  string task_id = 1;
+  bool success = 2;
+  bytes result = 3;
+  string error = 4;
+  repeated ArtifactRef artifacts = 5;
+}

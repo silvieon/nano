@@ -1,0 +1,1 @@
+Look for the latest PronsoleD configuration. If the local configuration exists, inspect it and compare it with the running daemon's configuration. If it does not exist locally, search the web for the documented default configuration instead. Then produce one final explanation of what configuration the printer is actually using.

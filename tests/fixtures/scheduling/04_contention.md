@@ -1,0 +1,1 @@
+Check the health of every service in my home lab that can answer filesystem, media, printer, or network queries. Run the checks concurrently, but do not allow more than two checks against the same service at once. Once all checks complete, summarize which services are healthy and which need attention.

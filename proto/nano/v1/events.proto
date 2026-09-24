@@ -1,0 +1,52 @@
+syntax = "proto3";
+package nano.v1;
+
+import "nano/v1/task.proto";
+
+message Event {
+  string event_id = 1;
+  string task_id = 2;
+  string parent_task_id = 3;
+  uint64 sequence = 4;
+  int64 timestamp_unix_ms = 5;
+  string producer = 6;
+  uint32 schema_version = 7;
+
+  oneof payload {
+    TaskStarted started = 10;
+    Heartbeat heartbeat = 11;
+    Progress progress = 12;
+    TaskStateChanged state_changed = 13;
+    TaskResult result = 14;
+    TaskFailure failure = 15;
+    ControlIssued control = 16;
+  }
+}
+
+message TaskStarted {}
+
+message Heartbeat {
+  string state = 1;
+  double progress = 2;
+  map<string,string> telemetry = 3;
+}
+
+message Progress {
+  double fraction = 1;
+  string message = 2;
+}
+
+message TaskStateChanged {
+  TaskState old_state = 1;
+  TaskState new_state = 2;
+}
+
+message TaskFailure {
+  string code = 1;
+  string message = 2;
+  bool retryable = 3;
+}
+
+message ControlIssued {
+  string action = 1;
+}

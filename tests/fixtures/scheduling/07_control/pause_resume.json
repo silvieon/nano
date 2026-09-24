@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"start-print","service":"pronsole","operation":"print","arguments":{"supports_pause_resume":true},"depends_on":[]},
+    {"id":"verify-completion","service":"pronsole","operation":"status","arguments":{},"depends_on":["start-print"]}
+  ]
+}

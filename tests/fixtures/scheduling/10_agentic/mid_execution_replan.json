@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"find-stl","service":"filesystem-search","operation":"find-newest","arguments":{},"depends_on":[]},
+    {"id":"check-printer","service":"pronsole","operation":"status","arguments":{},"depends_on":[]},
+    {"id":"stage","service":"pronsole","operation":"stage","arguments":{"simulate":{"outcome":"success"}},"depends_on":["find-stl","check-printer"]},
+    {"id":"start-print","service":"pronsole","operation":"print","arguments":{"simulate":{"outcome":"fail","failure_class":"replan_required","reason":"incompatible_profile"}},"depends_on":["stage"]},
+    {"id":"inspect-profiles","service":"pronsole","operation":"profiles","arguments":{},"depends_on":["start-print"]},
+    {"id":"replanned-print","service":"pronsole","operation":"print","arguments":{"plan_revision":2},"depends_on":["inspect-profiles"]}
+  ]
+}

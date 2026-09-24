@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "nodes": [
+    {"id":"prepare","service":"filesystem","operation":"prepare","arguments":{"deadline_ms":10000},"depends_on":[]},
+    {"id":"process","service":"worker","operation":"process","arguments":{"deadline_ms":10000},"depends_on":["prepare"]},
+    {"id":"package","service":"artifact-store","operation":"package","arguments":{"deadline_ms":10000},"depends_on":["process"]}
+  ]
+}

@@ -1,0 +1,1 @@
+Take the newest STL in the projects share, verify it, inspect its metadata, convert it to the printer's required format, upload it to staging, validate the staged file, start the print, wait for the first layer, capture a status snapshot, and finally archive the completed job metadata. Each step should happen only after the previous step succeeds.

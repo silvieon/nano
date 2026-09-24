@@ -1,0 +1,5 @@
+[project]
+name = "nano-orchestrator"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["grpcio>=1.60", "protobuf>=5.0", "pydantic>=2.0"]
