@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import json
 import shutil
@@ -6,7 +8,7 @@ import sys
 from pathlib import Path
 
 from nano_orchestrator.compiler import compile_execution_graph
-from nano_orchestrator.llm import JsonLLMClient
+from nano_orchestrator.llm import JsonLLMClient, load_llm_client
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,23 +16,26 @@ FIXTURES = ROOT / "tests" / "fixtures" / "scheduling"
 
 
 def discover_cases() -> list[str]:
-    """Return all scheduling fixtures that have both .md and .json files."""
     cases = []
 
     for json_file in sorted(FIXTURES.rglob("*.json")):
         md_file = json_file.with_suffix(".md")
+
         if md_file.is_file():
-            cases.append(str(json_file.relative_to(FIXTURES).with_suffix("")))
+            cases.append(
+                str(json_file.relative_to(FIXTURES).with_suffix(""))
+            )
 
     return cases
 
 
 def run_scheduler(plan_json: str) -> tuple[int, str, str]:
-    """Build and run the Rust scheduler directly."""
     cargo = shutil.which("cargo")
 
     if cargo is None:
-        raise RuntimeError("cargo is not installed or not on PATH")
+        raise RuntimeError(
+            "cargo is not installed or not on PATH"
+        )
 
     manifest = ROOT / "scheduler" / "Cargo.toml"
     binary = ROOT / "scheduler" / "target" / "debug" / "nano-scheduler"
@@ -74,16 +79,66 @@ def run_scheduler(plan_json: str) -> tuple[int, str, str]:
     return result.returncode, result.stdout, result.stderr
 
 
-def run_case(case: str) -> int:
+def run_plan(prompt: str, llm_client) -> int:
+    print()
+    print("=" * 72)
+    print("HUMAN INPUT")
+    print("=" * 72)
+    print(prompt)
+
+    graph = llm_client.generate_execution_graph(prompt)
+    plan = compile_execution_graph(graph)
+
+    print()
+    print("=" * 72)
+    print("COMPILED RUNTIME PLAN")
+    print("=" * 72)
+    print(json.dumps(plan.model_dump(), indent=2))
+
+    print()
+    print("=" * 72)
+    print("RUST SCHEDULER TRACE")
+    print("=" * 72)
+
+    try:
+        exit_code, stdout, stderr = run_scheduler(
+            plan.model_dump_json()
+        )
+    except (RuntimeError, subprocess.TimeoutExpired) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+
+    print(stdout, end="")
+
+    if stderr:
+        print()
+        print("=" * 72)
+        print("RUST SCHEDULER STDERR")
+        print("=" * 72)
+        print(stderr, end="", file=sys.stderr)
+
+    print()
+    print("=" * 72)
+    print(f"EXIT CODE: {exit_code}")
+    print("=" * 72)
+    print()
+
+    return exit_code
+
+
+def run_fixture(case: str) -> int:
     md_path = FIXTURES / f"{case}.md"
     json_path = FIXTURES / f"{case}.json"
 
     if not md_path.is_file():
-        print(f"ERROR: case not found: {case}")
+        print(f"ERROR: case not found: {case}", file=sys.stderr)
         return 1
 
     if not json_path.is_file():
-        print(f"ERROR: missing JSON fixture: {json_path}")
+        print(
+            f"ERROR: missing JSON fixture: {json_path}",
+            file=sys.stderr,
+        )
         return 1
 
     prompt = md_path.read_text().strip()
@@ -91,15 +146,18 @@ def run_case(case: str) -> int:
 
     print()
     print("=" * 72)
-    print(f"CASE: {case}")
+    print(f"FIXTURE: {case}")
     print("=" * 72)
+
+    graph = JsonLLMClient().generate_execution_graph(
+        llm_response
+    )
+
+    plan = compile_execution_graph(graph)
 
     print()
     print("=== HUMAN REQUEST ===")
     print(prompt)
-
-    graph = JsonLLMClient().generate_execution_graph(llm_response)
-    plan = compile_execution_graph(graph)
 
     print()
     print("=== COMPILED RUNTIME PLAN ===")
@@ -124,17 +182,28 @@ def run_case(case: str) -> int:
         print(stderr, end="", file=sys.stderr)
 
     print()
-    print("=" * 72)
-    print(f"EXIT CODE: {exit_code}")
-    print("=" * 72)
+    print(f"=== EXIT CODE: {exit_code} ===")
     print()
 
     return exit_code
 
 
+def run_input(prompt: str) -> int:
+    provider = __import__(
+        "os"
+    ).environ.get("NANO_LLM_PROVIDER", "openai-compatible")
+
+    print()
+    print(f"LLM provider: {provider}")
+
+    client = load_llm_client()
+
+    return run_plan(prompt, client)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Run one Nano scheduling fixture end-to-end."
+        description="Run a Nano scheduling fixture or arbitrary user input."
     )
 
     parser.add_argument(
@@ -144,9 +213,14 @@ def main() -> int:
     )
 
     parser.add_argument(
+        "--input",
+        help="run arbitrary human-readable input through the configured LLM",
+    )
+
+    parser.add_argument(
         "--list",
         action="store_true",
-        help="list available scheduling cases",
+        help="list available scheduling fixtures",
     )
 
     args = parser.parse_args()
@@ -154,11 +228,15 @@ def main() -> int:
     if args.list:
         for case in discover_cases():
             print(case)
+
         return 0
+
+    if args.input is not None:
+        return run_input(args.input)
 
     if not args.case:
         parser.error(
-            "provide a case name or use --list"
+            "provide a fixture case, --input, or --list"
         )
 
     case = args.case.removesuffix(".json").removesuffix(".md")
@@ -166,14 +244,19 @@ def main() -> int:
     available = discover_cases()
 
     if case not in available:
-        print(f"ERROR: unknown case: {case}", file=sys.stderr)
+        print(
+            f"ERROR: unknown case: {case}",
+            file=sys.stderr,
+        )
         print()
         print("Available cases:")
+
         for available_case in available:
             print(f"  {available_case}")
+
         return 1
 
-    return run_case(case)
+    return run_fixture(case)
 
 
 if __name__ == "__main__":

@@ -1,15 +1,25 @@
-# Orchestrator
+# Nano Orchestrator
 
-Python 3.12+ semantic layer. Intentionally unimplemented.
+The Nano orchestrator owns semantic planning and compilation.
 
-Future modules:
-- LLM adapter
-- structured-output validation
-- context/state
-- semantic decomposition
-- search-result arbitration
-- execution graph
-- replanning
-- final response synthesis
+The orchestrator does not depend on a specific LLM provider.
 
-Dependency direction: generated protobuf clients and runtime APIs, never daemon implementation details.
+## Architecture
+
+```text
+human input
+    |
+    v
+LLMClient
+    |
+    v
+ExecutionGraph
+    |
+    v
+Plan Compiler
+    |
+    v
+RuntimePlan
+    |
+    v
+Rust Scheduler
