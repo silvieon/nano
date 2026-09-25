@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -64,12 +65,14 @@ def build_scheduler():
         )
 
     manifest = ROOT / "scheduler" / "Cargo.toml"
+    binary_name = "nano-scheduler.exe" if os.name == "nt" else "nano-scheduler"
+
     binary = (
         ROOT
         / "scheduler"
         / "target"
         / "debug"
-        / "nano-scheduler"
+        / binary_name
     )
 
     build = subprocess.run(

@@ -75,7 +75,8 @@ def test_llm_graph_schema_rejects_unknown_fields():
             }],
         })
 
-def test_ref_id_arguments_become_runtime_dependencies():
+
+def test_structured_ref_creates_dependency():
     graph = ExecutionGraph.model_validate({
         "version": 1,
         "nodes": [
@@ -90,7 +91,7 @@ def test_ref_id_arguments_become_runtime_dependencies():
                 "operation": "summarize",
                 "arguments": {
                     "text": {
-                        "ref_id": "search",
+                        "ref": "search",
                     }
                 },
             },
@@ -104,7 +105,7 @@ def test_ref_id_arguments_become_runtime_dependencies():
     ).depends_on == ["search"]
 
 
-def test_nested_source_references_become_fanin_dependencies():
+def test_nested_structured_refs_create_fanin_dependencies():
     graph = ExecutionGraph.model_validate({
         "version": 1,
         "nodes": [
@@ -126,11 +127,15 @@ def test_nested_source_references_become_fanin_dependencies():
                     "texts": [
                         {
                             "id": "python_results",
-                            "source": "python",
+                            "text": {
+                                "ref": "python",
+                            },
                         },
                         {
                             "id": "rust_results",
-                            "source": "rust",
+                            "text": {
+                                "ref": "rust",
+                            },
                         },
                     ]
                 },
@@ -145,35 +150,21 @@ def test_nested_source_references_become_fanin_dependencies():
     ).depends_on == ["python", "rust"]
 
 
-def test_bare_task_ids_and_templates_become_dependencies():
+def test_literal_task_id_string_is_not_dependency():
     graph = ExecutionGraph.model_validate({
         "version": 1,
         "nodes": [
             {
-                "id": "read_a",
-                "service": "file",
-                "operation": "read",
+                "id": "search",
+                "service": "web",
+                "operation": "search",
             },
             {
-                "id": "read_b",
-                "service": "file",
-                "operation": "read",
-            },
-            {
-                "id": "compare",
-                "service": "compare",
+                "id": "consumer",
+                "service": "test",
                 "operation": "run",
                 "arguments": {
-                    "data1": "read_a",
-                    "data2": "read_b",
-                },
-            },
-            {
-                "id": "report",
-                "service": "report",
-                "operation": "run",
-                "arguments": {
-                    "content": "{compare}",
+                    "value": "search",
                 },
             },
         ],
@@ -182,15 +173,70 @@ def test_bare_task_ids_and_templates_become_dependencies():
     plan = compile_execution_graph(graph)
 
     assert next(
-        t for t in plan.tasks if t.id == "compare"
-    ).depends_on == ["read_a", "read_b"]
+        t for t in plan.tasks if t.id == "consumer"
+    ).depends_on == []
+
+
+def test_source_is_ordinary_data():
+    graph = ExecutionGraph.model_validate({
+        "version": 1,
+        "nodes": [
+            {
+                "id": "search",
+                "service": "web",
+                "operation": "search",
+            },
+            {
+                "id": "consumer",
+                "service": "test",
+                "operation": "run",
+                "arguments": {
+                    "source": "search",
+                },
+            },
+        ],
+    })
+
+    plan = compile_execution_graph(graph)
 
     assert next(
-        t for t in plan.tasks if t.id == "report"
-    ).depends_on == ["compare"]
+        t for t in plan.tasks if t.id == "consumer"
+    ).depends_on == []
 
 
-def test_arbitrary_strings_are_not_dependencies():
+def test_nested_action_id_is_not_dependency():
+    graph = ExecutionGraph.model_validate({
+        "version": 1,
+        "nodes": [
+            {
+                "id": "search",
+                "service": "web",
+                "operation": "search",
+            },
+            {
+                "id": "planner",
+                "service": "agent",
+                "operation": "plan",
+                "arguments": {
+                    "actions": [
+                        {
+                            "id": "search",
+                            "operation": "search",
+                        }
+                    ]
+                },
+            },
+        ],
+    })
+
+    plan = compile_execution_graph(graph)
+
+    assert next(
+        t for t in plan.tasks if t.id == "planner"
+    ).depends_on == []
+
+
+def test_template_strings_are_not_dependencies():
     graph = ExecutionGraph.model_validate({
         "version": 1,
         "nodes": [
@@ -204,7 +250,7 @@ def test_arbitrary_strings_are_not_dependencies():
                 "service": "report",
                 "operation": "write",
                 "arguments": {
-                    "question": "search the internet",
+                    "content": "{search.output}",
                 },
             },
         ],
@@ -215,3 +261,50 @@ def test_arbitrary_strings_are_not_dependencies():
     assert next(
         t for t in plan.tasks if t.id == "report"
     ).depends_on == []
+
+
+def test_unknown_structured_ref_is_rejected():
+    graph = ExecutionGraph.model_validate({
+        "version": 1,
+        "nodes": [
+            {
+                "id": "consumer",
+                "service": "test",
+                "operation": "run",
+                "arguments": {
+                    "input": {
+                        "ref": "does_not_exist",
+                    }
+                },
+            }
+        ],
+    })
+
+    with pytest.raises(
+        PlanCompileError,
+        match="unknown node",
+    ):
+        compile_execution_graph(graph)
+
+
+def test_scalar_arguments_do_not_crash_reference_collection():
+    graph = ExecutionGraph.model_validate({
+        "version": 1,
+        "nodes": [
+            {
+                "id": "task",
+                "service": "test",
+                "operation": "run",
+                "arguments": {
+                    "count": 10,
+                    "enabled": True,
+                    "ratio": 0.5,
+                    "nothing": None,
+                },
+            }
+        ],
+    })
+
+    plan = compile_execution_graph(graph)
+
+    assert plan.tasks[0].depends_on == []

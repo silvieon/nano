@@ -8,8 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from nano_orchestrator.compiler import compile_execution_graph
 from nano_orchestrator.llm import JsonLLMClient, load_llm_client
+from nano_orchestrator.planning import plan_request
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -96,15 +96,15 @@ def run_plan(prompt: str, llm_client) -> int:
     print("=" * 72)
     print(prompt)
 
-    graph = llm_client.generate_execution_graph(prompt)
+    planning_result = plan_request(prompt, llm_client)
+    graph = planning_result.graph
+    plan = planning_result.plan
 
     print()
     print("=" * 72)
     print("EXECUTION GRAPH")
     print("=" * 72)
     print(json.dumps(graph.model_dump(), indent=2))
-
-    plan = compile_execution_graph(graph)
 
     print()
     print("=" * 72)
@@ -166,11 +166,19 @@ def run_fixture(case: str) -> int:
     print(f"FIXTURE: {case}")
     print("=" * 72)
 
-    graph = JsonLLMClient().generate_execution_graph(
-        llm_response
+    class FixtureResponseClient:
+        def generate_execution_graph(self, _prompt):
+            return JsonLLMClient().generate_execution_graph(
+                llm_response
+            )
+
+    planning_result = plan_request(
+        prompt,
+        FixtureResponseClient(),
     )
 
-    plan = compile_execution_graph(graph)
+    graph = planning_result.graph
+    plan = planning_result.plan
 
     print()
     print("=== HUMAN REQUEST ===")
@@ -231,7 +239,9 @@ def run_executiongraph_case(case: str, client, binary: Path) -> dict:
     }
 
     try:
-        graph = client.generate_execution_graph(prompt)
+        planning_result = plan_request(prompt, client)
+        graph = planning_result.graph
+        plan = planning_result.plan
         graph_data = graph.model_dump(mode="json")
         (output_dir / "execution_graph.json").write_text(
             json.dumps(graph_data, indent=2) + "\n",
@@ -239,13 +249,24 @@ def run_executiongraph_case(case: str, client, binary: Path) -> dict:
         )
         result["execution_graph"] = graph_data
 
-        plan = compile_execution_graph(graph)
         plan_data = plan.model_dump(mode="json")
         (output_dir / "runtime_plan.json").write_text(
             json.dumps(plan_data, indent=2) + "\n",
             encoding="utf-8",
         )
         result["runtime_plan"] = plan_data
+
+        result["planning_attempts"] = planning_result.context.attempts
+
+        result["planning_failures"] = [
+            {
+                "source": failure.source,
+                "code": failure.code,
+                "message": failure.message,
+                "node_id": failure.node_id,
+            }
+            for failure in planning_result.context.failures
+        ]
 
         exit_code, stdout, stderr = run_scheduler(
             plan.model_dump_json()
@@ -280,19 +301,93 @@ def run_executiongraph_case(case: str, client, binary: Path) -> dict:
     return result
 
 
-def run_executiongraph(case: str | None, run_all: bool, limit: int | None) -> int:
+def summarize_executiongraph_results(
+    results: list[dict],
+) -> dict:
+    classifications = {
+        "first_pass": 0,
+        "repaired": 0,
+        "repair_exhausted": 0,
+        "planning_error": 0,
+        "scheduler_failed": 0,
+    }
+
+    validation_failures: dict[str, int] = {}
+    cases: list[dict] = []
+
+    for result in results:
+        attempts = result.get("planning_attempts")
+
+        if result.get("status") == "passed":
+            if attempts == 1:
+                classification = "first_pass"
+            elif attempts is not None and attempts > 1:
+                classification = "repaired"
+            else:
+                classification = "planning_error"
+        elif result.get("error_type") == "PlanningError":
+            classification = "repair_exhausted"
+        elif result.get("status") == "scheduler_failed":
+            classification = "scheduler_failed"
+        else:
+            classification = "planning_error"
+
+        classifications[classification] += 1
+
+        failure_codes: list[str] = []
+
+        for failure in result.get("planning_failures", []):
+            code = failure["code"]
+            failure_codes.append(code)
+            validation_failures[code] = (
+                validation_failures.get(code, 0) + 1
+            )
+
+        cases.append(
+            {
+                "case": result["case"],
+                "classification": classification,
+                "planning_attempts": attempts,
+                "planning_failure_codes": failure_codes,
+                "status": result.get("status"),
+                "error_type": result.get("error_type"),
+                "error": result.get("error"),
+            }
+        )
+
+    return {
+        "total": len(results),
+        "counts": classifications,
+        "validation_failures": dict(
+            sorted(validation_failures.items())
+        ),
+        "cases": cases,
+    }
+
+
+def run_executiongraph(
+    case: str | None,
+    run_all: bool,
+    limit: int | None,
+) -> int:
     available = discover_executiongraph_cases()
 
     if case:
         case = case.removesuffix(".md")
         if case not in available:
-            print(f"ERROR: unknown ExecutionGraph case: {case}", file=sys.stderr)
+            print(
+                f"ERROR: unknown ExecutionGraph case: {case}",
+                file=sys.stderr,
+            )
             return 1
         cases = [case]
     elif run_all:
         cases = available
     else:
-        raise ValueError("provide --case, --all-executiongraph, or --list-executiongraph")
+        raise ValueError(
+            "provide --case, --all-executiongraph, or "
+            "--list-executiongraph"
+        )
 
     if limit is not None:
         cases = cases[:limit]
@@ -305,12 +400,14 @@ def run_executiongraph(case: str | None, run_all: bool, limit: int | None) -> in
         return 1
 
     print()
-    print(f"LLM provider: {os.environ.get('NANO_LLM_PROVIDER', 'openai-compatible')}")
+    print(
+        f"LLM provider: "
+        f"{os.environ.get('NANO_LLM_PROVIDER', 'openai-compatible')}"
+    )
     print(f"ExecutionGraph cases: {len(cases)}")
     print(f"Results: {EXECUTIONGRAPH_RESULTS}")
 
-    passed = 0
-    failed = 0
+    results: list[dict] = []
 
     for index, current_case in enumerate(cases, start=1):
         print()
@@ -318,19 +415,99 @@ def run_executiongraph(case: str | None, run_all: bool, limit: int | None) -> in
         print(f"[{index}/{len(cases)}] {current_case}")
         print("=" * 72)
 
-        result = run_executiongraph_case(current_case, client, binary)
+        result = run_executiongraph_case(
+            current_case,
+            client,
+            binary,
+        )
+        results.append(result)
+
         print(f"status: {result['status']}")
 
-        if result["status"] == "passed":
-            passed += 1
-        else:
-            failed += 1
-            print(f"error: {result.get('error', 'scheduler failed')}")
+        if result.get("planning_attempts") is not None:
+            print(
+                f"planning attempts: "
+                f"{result['planning_attempts']}"
+            )
+
+        if result.get("planning_failures"):
+            codes = [
+                failure["code"]
+                for failure in result["planning_failures"]
+            ]
+            print(
+                "planning failures: "
+                + ", ".join(codes)
+            )
+
+        if result["status"] != "passed":
+            print(
+                f"error: "
+                f"{result.get('error', 'scheduler failed')}"
+            )
+
+    summary = summarize_executiongraph_results(results)
+
+    summary_path = EXECUTIONGRAPH_RESULTS / "summary.json"
+    summary_path.write_text(
+        json.dumps(
+            summary,
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
     print()
     print("=" * 72)
-    print(f"COMPLETE: {passed} passed, {failed} failed")
+    print("EXECUTIONGRAPH SUMMARY")
     print("=" * 72)
+    print(f"total:             {summary['total']}")
+    print(
+        f"first pass:        "
+        f"{summary['counts']['first_pass']}"
+    )
+    print(
+        f"repaired:          "
+        f"{summary['counts']['repaired']}"
+    )
+    print(
+        f"repair exhausted:  "
+        f"{summary['counts']['repair_exhausted']}"
+    )
+    print(
+        f"planning error:    "
+        f"{summary['counts']['planning_error']}"
+    )
+    print(
+        f"scheduler failed:  "
+        f"{summary['counts']['scheduler_failed']}"
+    )
+
+    print()
+
+    if summary["validation_failures"]:
+        print("VALIDATION FAILURES")
+        print("-" * 72)
+
+        for code, count in summary["validation_failures"].items():
+            print(f"{code:<32} {count}")
+
+        print()
+
+    print(f"Summary: {summary_path}")
+    print("=" * 72)
+
+    planning_failures = (
+        summary["counts"]["planning_error"]
+        + summary["counts"]["repair_exhausted"]
+    )
+
+    failed = (
+        planning_failures
+        + summary["counts"]["scheduler_failed"]
+    )
 
     return 0 if failed == 0 else 1
 

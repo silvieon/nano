@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from typing import Any
 
 from .models import ExecutionGraph, RuntimePlan, RuntimeTask
@@ -10,50 +9,36 @@ class PlanCompileError(ValueError):
     pass
 
 
-_TEMPLATE_REF = re.compile(
-    r"^\{(?P<id>[^{}]+?)(?:\.[^{}]+)?\}$"
-)
-
-
 def _collect_task_refs(value: Any, known: set[str]) -> set[str]:
-    """Collect explicit and unambiguous task references from semantic arguments.
+    """Collect canonical semantic task references from arguments.
 
-    Supported reference forms:
-      {"ref": "task"}
-      {"ref_id": "task"}
-      {"source": "task"}
-      "task"                  when it exactly matches a known node ID
-      "{task}"                template form
-      "{node_4}"              legacy numeric-node template form
+    Nano has exactly one dependency-bearing argument form:
 
-    Arbitrary strings are not treated as dependencies unless they resolve to
-    a known task ID.
+        {"ref": "task_id"}
+
+    Everything else is ordinary argument data. In particular, bare strings,
+    ``source`` fields, nested ``id`` fields, and template/interpolation syntax
+    are never interpreted as task references.
     """
     refs: set[str] = set()
 
     if isinstance(value, dict):
-        for key, child in value.items():
-            if key in {"ref", "ref_id", "source"}:
-                if not isinstance(child, str):
-                    raise PlanCompileError(
-                        f"task reference field {key!r} must contain a string"
-                    )
+        if "ref" in value:
+            ref = value["ref"]
 
-                ref = child.split(".", 1)[0]
+            if not isinstance(ref, str):
+                raise PlanCompileError(
+                    "task reference field 'ref' must contain a string"
+                )
 
-                if ref not in known and ref.startswith("node_"):
-                    candidate = ref.removeprefix("node_")
-                    if candidate in known:
-                        ref = candidate
+            if ref not in known:
+                raise PlanCompileError(
+                    f"task reference {ref!r} points to an unknown node"
+                )
 
-                if ref not in known:
-                    raise PlanCompileError(
-                        f"task reference {child!r} in field {key!r} "
-                        "points to an unknown node"
-                    )
+            refs.add(ref)
 
-                refs.add(ref)
-
+        for child in value.values():
             refs.update(_collect_task_refs(child, known))
 
         return refs
@@ -62,40 +47,7 @@ def _collect_task_refs(value: Any, known: set[str]) -> set[str]:
         for child in value:
             refs.update(_collect_task_refs(child, known))
 
-        return refs
-
-    if isinstance(value, str):
-        if value in known:
-            refs.add(value)
-            return refs
-
-        match = _TEMPLATE_REF.fullmatch(value)
-        if match:
-            ref = match.group("id")
-
-            if ref.startswith("output_of_"):
-                ref = ref.removeprefix("output_of_")
-
-            elif ref.startswith("output_from_"):
-                ref = ref.removeprefix("output_from_")
-
-            elif "." in ref:
-                ref = ref.split(".", 1)[0]
-
-            if ref not in known and ref.startswith("node_"):
-                candidate = ref.removeprefix("node_")
-                if candidate in known:
-                    ref = candidate
-
-            if ref not in known:
-                raise PlanCompileError(
-                    f"task reference {match.group('id')!r} in template "
-                    "points to an unknown node"
-                )
-
-            refs.add(ref)
-
-        return refs
+    return refs
 
 
 def compile_execution_graph(graph: ExecutionGraph) -> RuntimePlan:
@@ -135,7 +87,6 @@ def compile_execution_graph(graph: ExecutionGraph) -> RuntimePlan:
 
         dependencies[node.id] = deps
 
-    # Kahn's algorithm catches dependency cycles before the plan reaches Rust.
     remaining = {
         node_id: set(deps)
         for node_id, deps in dependencies.items()

@@ -47,18 +47,47 @@ class OpenAICompatibleLLM:
         schema = ExecutionGraph.model_json_schema()
 
         system_prompt = (
-            "You are the planning component of Nano. "
+            "You are the planning component of Nano, an agentic intelligence focused on automated task execution. "
             "Convert the user's request into an execution graph. "
             "Return only JSON matching the supplied schema. "
             "Do not execute tools yourself. "
-            "For every node that consumes another node's output, include that "
-            "producer in depends_on. For every multi-step operation where a "
-            "later step requires an earlier step to finish, include the earlier "
-            "node in depends_on even when no output is passed as an argument. "
-            "Independent nodes should have empty depends_on so they can run "
-            "in parallel. Keep data references in arguments when needed, but "
-            "do not rely on argument structure alone to express execution "
-            "ordering."
+
+            "The execution graph has two separate dependency concepts. "
+            "depends_on expresses execution ordering: a node must not start "
+            "until every node listed in depends_on has completed successfully. "
+            "Independent nodes must have an empty depends_on list. "
+            "Do not add dependencies merely because two nodes are related. "
+            "Only add a dependency when the later operation actually requires "
+            "the earlier operation to complete. "
+
+            "When an argument consumes the output of another node, represent "
+            "that data dependency using exactly this form: "
+            '{"ref": "<node_id>"}. '
+            "The referenced value must be an actual node ID in the graph. "
+
+            "Every node that consumes another node's output must include that "
+            "producer in depends_on as well as using the structured ref. "
+
+            "Never use ref for service names, device names, filenames, URLs, "
+            "external resources, literal strings, or other ordinary values. "
+
+            "Do not use ref_id or source to represent task dependencies. "
+            "source is ordinary argument data. "
+
+            "Do not encode task references using templates, interpolation, "
+            "dollar-sign syntax, bracket syntax, or bare strings. "
+            "Use only the structured {ref: node_id} representation. "
+
+            "Keep ordinary argument values as ordinary values. "
+            "Do not turn identifiers into task references merely because they "
+            "resemble node IDs. "
+
+            "For multi-step operations where a later step requires an earlier "
+            "step to finish but does not consume its output, include the earlier "
+            "node in depends_on. "
+
+            "The graph must contain unique node IDs, valid dependencies, no "
+            "self-dependencies, and no dependency cycles."
         )
 
         payload = {
