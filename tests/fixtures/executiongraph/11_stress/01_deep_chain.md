@@ -1,0 +1,1 @@
+Find the printer status, parse it, validate it, determine whether it indicates an error, look up the meaning of that error, identify possible remedies, choose an appropriate remedy, apply it, verify the printer status again, and save a final report.

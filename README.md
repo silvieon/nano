@@ -138,6 +138,7 @@ python tests/run_case.py --input \
 
 This exercises the real planning boundary:
 
+
 ```text
 your input
     ↓
@@ -340,7 +341,8 @@ nano/
 │   ├── test_compiler.py
 │   ├── test_scheduler_horizon.py
 │   └── fixtures/
-│       └── scheduling/
+│       ├── scheduling/
+│       └── executiongraph/
 │
 └── README.md
 ```
@@ -357,6 +359,71 @@ Nano is being developed toward a distributed runtime in which:
 - execution can be observed and persisted
 - long-running work can survive individual process or connection failures
 - Kubernetes can serve as a deployment substrate without becoming an architectural dependency
+
+## ExecutionGraph observation corpus
+
+The repository also contains a real-LLM planning corpus under:
+
+```text
+tests/
+└── fixtures/
+    └── executiongraph/
+        ├── 01_basic/
+        ├── 02_dependencies/
+        ├── 03_parallelism/
+        ├── 04_fanout_fanin/
+        ├── 05_conditionals/
+        ├── 06_retries_and_recovery/
+        ├── 07_artifacts/
+        ├── 08_complex_requests/
+        ├── 09_agentic/
+        ├── 10_ambiguity/
+        └── 11_stress/
+```
+
+Unlike the deterministic scheduling fixtures, these cases intentionally do
+not contain expected `.json` graphs. The human-readable `.md` prompt is sent
+to the configured real LLM so that Nano's actual planning behavior can be
+observed.
+
+List the corpus:
+
+```bash
+python tests/run_case.py --list-executiongraph
+```
+
+Run one case:
+
+```bash
+python tests/run_case.py --executiongraph 02_dependencies/01_sequential_chain
+```
+
+Run a small smoke test:
+
+```bash
+python tests/run_case.py --all-executiongraph --limit 5
+```
+
+Run the complete corpus:
+
+```bash
+python tests/run_case.py --all-executiongraph
+```
+
+Each case records its observed artifacts under:
+
+```text
+tests/results/executiongraph/<case>/
+    input.md
+    execution_graph.json
+    runtime_plan.json
+    scheduler_trace.txt
+    result.json
+```
+
+These results are intentionally ignored by Git. The corpus is for observing
+model behavior first; it should not assume that a particular LLM will produce
+one exact graph for every natural-language request.
 
 The current vertical slice intentionally starts smaller: human input → plan → Rust scheduler → observable trace.
 

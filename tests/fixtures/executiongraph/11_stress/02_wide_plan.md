@@ -1,0 +1,1 @@
+Check printer status, disk space, memory, CPU load, system uptime, network connectivity, available updates, recent system errors, and printer queue status. Then combine everything into one system health report.

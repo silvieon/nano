@@ -1,0 +1,1 @@
+Check printer status and system health in parallel. If the printer is offline, investigate the network connection and printer service independently. If the printer is online, inspect the current print queue. Combine all relevant findings into a final report.

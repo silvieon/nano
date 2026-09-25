@@ -74,3 +74,144 @@ def test_llm_graph_schema_rejects_unknown_fields():
                 "invented_scheduler_magic": True,
             }],
         })
+
+def test_ref_id_arguments_become_runtime_dependencies():
+    graph = ExecutionGraph.model_validate({
+        "version": 1,
+        "nodes": [
+            {
+                "id": "search",
+                "service": "web",
+                "operation": "search",
+            },
+            {
+                "id": "summary",
+                "service": "nlp",
+                "operation": "summarize",
+                "arguments": {
+                    "text": {
+                        "ref_id": "search",
+                    }
+                },
+            },
+        ],
+    })
+
+    plan = compile_execution_graph(graph)
+
+    assert next(
+        t for t in plan.tasks if t.id == "summary"
+    ).depends_on == ["search"]
+
+
+def test_nested_source_references_become_fanin_dependencies():
+    graph = ExecutionGraph.model_validate({
+        "version": 1,
+        "nodes": [
+            {
+                "id": "python",
+                "service": "web",
+                "operation": "search",
+            },
+            {
+                "id": "rust",
+                "service": "web",
+                "operation": "search",
+            },
+            {
+                "id": "synthesize",
+                "service": "nlp",
+                "operation": "summarize",
+                "arguments": {
+                    "texts": [
+                        {
+                            "id": "python_results",
+                            "source": "python",
+                        },
+                        {
+                            "id": "rust_results",
+                            "source": "rust",
+                        },
+                    ]
+                },
+            },
+        ],
+    })
+
+    plan = compile_execution_graph(graph)
+
+    assert next(
+        t for t in plan.tasks if t.id == "synthesize"
+    ).depends_on == ["python", "rust"]
+
+
+def test_bare_task_ids_and_templates_become_dependencies():
+    graph = ExecutionGraph.model_validate({
+        "version": 1,
+        "nodes": [
+            {
+                "id": "read_a",
+                "service": "file",
+                "operation": "read",
+            },
+            {
+                "id": "read_b",
+                "service": "file",
+                "operation": "read",
+            },
+            {
+                "id": "compare",
+                "service": "compare",
+                "operation": "run",
+                "arguments": {
+                    "data1": "read_a",
+                    "data2": "read_b",
+                },
+            },
+            {
+                "id": "report",
+                "service": "report",
+                "operation": "run",
+                "arguments": {
+                    "content": "{compare}",
+                },
+            },
+        ],
+    })
+
+    plan = compile_execution_graph(graph)
+
+    assert next(
+        t for t in plan.tasks if t.id == "compare"
+    ).depends_on == ["read_a", "read_b"]
+
+    assert next(
+        t for t in plan.tasks if t.id == "report"
+    ).depends_on == ["compare"]
+
+
+def test_arbitrary_strings_are_not_dependencies():
+    graph = ExecutionGraph.model_validate({
+        "version": 1,
+        "nodes": [
+            {
+                "id": "search",
+                "service": "web",
+                "operation": "search",
+            },
+            {
+                "id": "report",
+                "service": "report",
+                "operation": "write",
+                "arguments": {
+                    "question": "search the internet",
+                },
+            },
+        ],
+    })
+
+    plan = compile_execution_graph(graph)
+
+    assert next(
+        t for t in plan.tasks if t.id == "report"
+    ).depends_on == []

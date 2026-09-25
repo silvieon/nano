@@ -3,11 +3,14 @@ from __future__ import annotations
 import importlib
 import json
 import os
-from pathlib import Path
-from typing import Any, Protocol
+from typing import Protocol
 from urllib import request
 
+from dotenv import load_dotenv
+
 from .models import ExecutionGraph
+
+load_dotenv()
 
 
 class LLMClient(Protocol):
@@ -47,7 +50,15 @@ class OpenAICompatibleLLM:
             "You are the planning component of Nano. "
             "Convert the user's request into an execution graph. "
             "Return only JSON matching the supplied schema. "
-            "Do not execute tools yourself."
+            "Do not execute tools yourself. "
+            "For every node that consumes another node's output, include that "
+            "producer in depends_on. For every multi-step operation where a "
+            "later step requires an earlier step to finish, include the earlier "
+            "node in depends_on even when no output is passed as an argument. "
+            "Independent nodes should have empty depends_on so they can run "
+            "in parallel. Keep data references in arguments when needed, but "
+            "do not rely on argument structure alone to express execution "
+            "ordering."
         )
 
         payload = {

@@ -1,0 +1,1 @@
+Research the current state of this project. Start by inspecting the repository structure, then use what you discover to decide what additional files or information need to be examined before summarizing the project.
