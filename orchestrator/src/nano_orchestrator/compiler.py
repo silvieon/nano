@@ -39,13 +39,20 @@ def _collect_task_refs(value: Any, known: set[str]) -> set[str]:
                         f"task reference field {key!r} must contain a string"
                     )
 
-                if child not in known:
+                ref = child.split(".", 1)[0]
+
+                if ref not in known and ref.startswith("node_"):
+                    candidate = ref.removeprefix("node_")
+                    if candidate in known:
+                        ref = candidate
+
+                if ref not in known:
                     raise PlanCompileError(
                         f"task reference {child!r} in field {key!r} "
                         "points to an unknown node"
                     )
 
-                refs.add(child)
+                refs.add(ref)
 
             refs.update(_collect_task_refs(child, known))
 
@@ -66,6 +73,15 @@ def _collect_task_refs(value: Any, known: set[str]) -> set[str]:
         if match:
             ref = match.group("id")
 
+            if ref.startswith("output_of_"):
+                ref = ref.removeprefix("output_of_")
+
+            elif ref.startswith("output_from_"):
+                ref = ref.removeprefix("output_from_")
+
+            elif "." in ref:
+                ref = ref.split(".", 1)[0]
+
             if ref not in known and ref.startswith("node_"):
                 candidate = ref.removeprefix("node_")
                 if candidate in known:
@@ -73,13 +89,13 @@ def _collect_task_refs(value: Any, known: set[str]) -> set[str]:
 
             if ref not in known:
                 raise PlanCompileError(
-                    f"task reference {ref!r} in template "
+                    f"task reference {match.group('id')!r} in template "
                     "points to an unknown node"
                 )
 
             refs.add(ref)
 
-    return refs
+        return refs
 
 
 def compile_execution_graph(graph: ExecutionGraph) -> RuntimePlan:
