@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 from nano_orchestrator.llm import JsonLLMClient, load_llm_client
-from nano_orchestrator.planning import plan_request
+from nano_orchestrator.planning import PlanningError, plan_request
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -286,6 +286,19 @@ def run_executiongraph_case(case: str, client, binary: Path) -> dict:
         result["scheduler_exit_code"] = exit_code
         result["status"] = "passed" if exit_code == 0 else "scheduler_failed"
 
+    except PlanningError as exc:
+        result["error_type"] = "PlanningError"
+        result["error"] = str(exc)
+        result["planning_attempts"] = exc.context.attempts
+        result["planning_failures"] = [
+            {
+                "source": failure.source,
+                "code": failure.code,
+                "message": failure.message,
+                "node_id": failure.node_id,
+            }
+            for failure in exc.context.failures
+        ]
     except subprocess.TimeoutExpired as exc:
         result["error_type"] = "TimeoutExpired"
         result["error"] = str(exc)
